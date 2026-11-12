@@ -6,40 +6,52 @@ import os
 # 1. Obtener la fecha de hoy
 fecha_hoy = datetime.now().strftime("%Y-%m-%d")
 
-# 2. Extraer datos (Ejemplo: Dólar Blue usando DolarApi)
-url = "https://dolarapi.com/v1/dolares/blue"
-respuesta = requests.get(url)
+# --- EXTRACCIÓN DE DATOS ---
 
-if respuesta.status_code == 200:
-    datos_api = respuesta.json()
-    dolar_compra = datos_api['compra']
-    dolar_venta = datos_api['venta']
-else:
-    dolar_compra = None
+# A. Dólar Blue (DolarApi)
+try:
+    url_dolar = "https://dolarapi.com/v1/dolares/blue"
+    datos_dolar = requests.get(url_dolar).json()
+    dolar_venta = datos_dolar['venta']
+except:
     dolar_venta = None
 
-# Aquí agregarías la recolección de las otras variables (Inflación, EMAE, etc.)
-# ...
+# B. Variables Nacionales (API Oficial de Datos Argentina)
+# Usamos los IDs del INDEC: IPC General y Actividad (EMAE)
+try:
+    url_nacional = "https://apis.datos.gob.ar/series/api/series/?ids=148.3_INDEC_IPC_NACION_M_0_22,143.3_NO_PR_2004_A_21&limit=1&format=json"
+    datos_nacional = requests.get(url_nacional).json()['data'][0]
+    
+    # La API devuelve una lista: [Fecha original, valor IPC, valor EMAE]
+    ipc_nacional = datos_nacional[1]
+    emae_nacional = datos_nacional[2]
+except:
+    ipc_nacional = None
+    emae_nacional = None
 
-# 3. Crear el nuevo registro
+# C. Variables de Córdoba
+# Dejamos la estructura lista. Requiere Web Scraping avanzado.
+ipc_cordoba = None
+
+# --- GUARDADO DE DATOS ---
+
+# 3. Crear el nuevo registro agrupando todo
 nuevo_registro = {
     "Fecha": fecha_hoy,
-    "Dolar_Blue_Compra": dolar_compra,
-    "Dolar_Blue_Venta": dolar_venta
+    "Dolar_Blue_Venta": dolar_venta,
+    "IPC_Nacional": ipc_nacional,
+    "EMAE_Nacional": emae_nacional,
+    "IPC_Cordoba": ipc_cordoba
 }
 
-# 4. Guardar en el CSV
 nombre_archivo = "datos_economicos.csv"
 
-# Si el archivo ya existe, lo abrimos y le sumamos la fila
+# 4. Guardar en el CSV (Pandas agregará las columnas nuevas automáticamente)
 if os.path.exists(nombre_archivo):
     df_existente = pd.read_csv(nombre_archivo)
-    # Convertimos el nuevo registro a un DataFrame temporal
     df_nuevo = pd.DataFrame([nuevo_registro])
-    # Concatenamos y guardamos
     df_final = pd.concat([df_existente, df_nuevo], ignore_index=True)
 else:
-    # Si no existe (es la primera vez que corre), crea el archivo desde cero
     df_final = pd.DataFrame([nuevo_registro])
 
 df_final.to_csv(nombre_archivo, index=False)
