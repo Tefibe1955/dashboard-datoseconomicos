@@ -1,2 +1,3 @@
-Fecha,Dolar_Blue_Compra,Dolar_Blue_Venta
-2026-11-12,1545,1565
+Fecha,Dolar_Blue_Compra,Dolar_Blue_Venta,IPC_Nacional,EMAE_Nacional,IPC_Cordoba
+2026-11-12,1545.0,1565,,,
+2026-11-12,,1565,,,
